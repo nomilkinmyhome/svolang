@@ -4,6 +4,7 @@
 #include <locale.h>
 
 #define TAPE_SIZE 30000
+#define STACK_SIZE 1024
 
 void skip_whitespace(const char **src) {
     while (**src == ' ' || **src == '\t' || **src == '\n' || **src == '\r') {
@@ -41,6 +42,9 @@ int main(int argc, char *argv[]) {
     int ptr = 0;
     const char *src = source;
 
+    const char *stack[STACK_SIZE];
+    int stack_ptr = 0;
+
     while (*src) {
         skip_whitespace(&src);
         if (match_word(src, "сво")) {
@@ -52,14 +56,46 @@ int main(int argc, char *argv[]) {
         } else if (match_word(src, "zov")) {
             putchar(tape[ptr]);
             src += strlen("zov");
-        } else if (*src == '>') {
+        } else if (match_word(src, "перемога")) {
             ptr++;
             if (ptr >= TAPE_SIZE) ptr = 0;
-            src++;
-        } else if (*src == '<') {
+            src += strlen("перемога");
+        } else if (match_word(src, "потужно")) {
             ptr--;
             if (ptr < 0) ptr = TAPE_SIZE - 1;
-            src++;
+            src += strlen("потужно");
+        } else if (match_word(src, "хрюко")) {
+            if (tape[ptr] == 0) {
+                int depth = 1;
+                src += strlen("хрюко");
+                while (*src && depth > 0) {
+                    skip_whitespace(&src);
+                    if (match_word(src, "хрюко")) {
+                        depth++;
+                        src += strlen("хрюко");
+                    } else if (match_word(src, "стяг")) {
+                        depth--;
+                        src += strlen("стяг");
+                    } else {
+                        src++;
+                    }
+                }
+            } else {
+                stack[stack_ptr++] = src;
+                src += strlen("хрюко");
+            }
+        } else if (match_word(src, "стяг")) {
+            if (stack_ptr == 0) {
+                fprintf(stderr, "Unmatched стяг\n");
+                free(source);
+                return 1;
+            }
+            if (tape[ptr] != 0) {
+                src = stack[stack_ptr - 1] + strlen("хрюко");
+            } else {
+                stack_ptr--;
+                src += strlen("стяг");
+            }
         } else if (*src == '\0') {
             break;
         } else {
